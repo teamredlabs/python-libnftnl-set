@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include <Python.h>
 #include <structmember.h>
 
@@ -149,14 +147,22 @@ static PyObject* NetfilterElementHandle_GetAttr (NetfilterElementHandle* self, P
 
 static int _NetfilterElementHandle_SetAttr_raw (NetfilterElementHandle* self, PyObject* value, uint16_t attr) {
     char* raw; uint32_t rawlen;
-    if (PyString_AsStringAndSize(value, &raw, (Py_ssize_t*) &rawlen)) return -1;
+    if (!PyString_Check(value)) {
+        PyErr_SetString(PyExc_OSError, "Attribute must be bytes");
+        return -1;
+    }
+    raw = PyString_AS_STRING(value);
+    rawlen = PyString_GET_SIZE(value);
     nftnl_set_elem_set(self->handle, attr, (const void*) raw, rawlen);
     return 0;
 }
 
 static int _NetfilterElementHandle_SetAttr_str (NetfilterElementHandle* self, PyObject* value, uint16_t attr) {
     char* str;
-    if (!(str = PyString_AsString(value))) return -1;
+    if (!(str = PyString_AsString(value))) {
+        PyErr_SetString(PyExc_OSError, "Attribute must be a string");
+        return -1;
+    }
     nftnl_set_elem_set_str(self->handle, attr, str);
     return 0;
 }
@@ -362,14 +368,22 @@ static PyObject* NetfilterSetHandle_GetAttr (NetfilterSetHandle* self, PyObject*
 
 static int _NetfilterSetHandle_SetAttr_raw (NetfilterSetHandle* self, PyObject* value, uint16_t attr) {
     char* raw; uint32_t rawlen;
-    if (PyString_AsStringAndSize(value, &raw, (Py_ssize_t*) &rawlen)) return -1;
+    if (!PyString_Check(value)) {
+        PyErr_SetString(PyExc_OSError, "Attribute must be bytes");
+        return -1;
+    }
+    raw = PyString_AS_STRING(value);
+    rawlen = PyString_GET_SIZE(value);
     nftnl_set_set_data(self->handle, attr, (const void*) raw, rawlen);
     return 0;
 }
 
 static int _NetfilterSetHandle_SetAttr_str (NetfilterSetHandle* self, PyObject* value, uint16_t attr) {
     char* str;
-    if (!(str = PyString_AsString(value))) return -1;
+    if (!(str = PyString_AsString(value))) {
+        PyErr_SetString(PyExc_OSError, "Attribute must be a string");
+        return -1;
+    }
     nftnl_set_set_str(self->handle, attr, str);
     return 0;
 }
