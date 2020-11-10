@@ -552,7 +552,7 @@ static PyObject* NetfilterBatchHandle_begin (NetfilterBatchHandle* self) {
 
     nftnl_batch_begin(mnl_nlmsg_batch_current(self->handle), self->seq++);
     mnl_nlmsg_batch_next(self->handle);
-    Py_RETURN_NONE;
+    return PyInt_FromLong(self->seq);
 }
 
 static PyObject* NetfilterBatchHandle_set_put (NetfilterBatchHandle* self, PyTupleObject* args) {
@@ -585,7 +585,7 @@ static PyObject* NetfilterBatchHandle_set_put (NetfilterBatchHandle* self, PyTup
     nftnl_set_nlmsg_build_payload(msg, set->handle);
     mnl_nlmsg_batch_next(self->handle);
 
-    Py_RETURN_NONE;
+    return PyInt_FromLong(self->seq);
 }
 
 static PyObject* NetfilterBatchHandle_set_del (NetfilterBatchHandle* self, PyTupleObject* args) {
@@ -618,7 +618,7 @@ static PyObject* NetfilterBatchHandle_set_del (NetfilterBatchHandle* self, PyTup
     nftnl_set_nlmsg_build_payload(msg, set->handle);
     mnl_nlmsg_batch_next(self->handle);
 
-    Py_RETURN_NONE;
+    return PyInt_FromLong(self->seq);
 }
 
 static PyObject* NetfilterBatchHandle_elem_put (NetfilterBatchHandle* self, PyTupleObject* args) {
@@ -651,7 +651,7 @@ static PyObject* NetfilterBatchHandle_elem_put (NetfilterBatchHandle* self, PyTu
     nftnl_set_elems_nlmsg_build_payload(msg, set->handle);
     mnl_nlmsg_batch_next(self->handle);
 
-    Py_RETURN_NONE;
+    return PyInt_FromLong(self->seq);
 }
 
 static PyObject* NetfilterBatchHandle_elem_del (NetfilterBatchHandle* self, PyTupleObject* args) {
@@ -684,12 +684,7 @@ static PyObject* NetfilterBatchHandle_elem_del (NetfilterBatchHandle* self, PyTu
     nftnl_set_elems_nlmsg_build_payload(msg, set->handle);
     mnl_nlmsg_batch_next(self->handle);
 
-    Py_RETURN_NONE;
-}
-
-static PyObject* NetfilterBatchHandle_dump (NetfilterBatchHandle* self) {
-    return PyString_FromStringAndSize(mnl_nlmsg_batch_head(self->handle),
-                                      (Py_ssize_t) mnl_nlmsg_batch_size(self->handle));
+    return PyInt_FromLong(self->seq);
 }
 
 static PyObject* NetfilterBatchHandle_end (NetfilterBatchHandle* self) {
@@ -700,7 +695,12 @@ static PyObject* NetfilterBatchHandle_end (NetfilterBatchHandle* self) {
 
     nftnl_batch_end(mnl_nlmsg_batch_current(self->handle), self->seq++);
     mnl_nlmsg_batch_next(self->handle);
-    Py_RETURN_NONE;
+    return PyInt_FromLong(self->seq);
+}
+
+static PyObject* NetfilterBatchHandle_dump (NetfilterBatchHandle* self) {
+    return PyString_FromStringAndSize(mnl_nlmsg_batch_head(self->handle),
+                                      (Py_ssize_t) mnl_nlmsg_batch_size(self->handle));
 }
 
 static PyMemberDef NetfilterBatchHandle_members[] = {
@@ -713,8 +713,8 @@ static PyMethodDef NetfilterBatchHandle_methods[] = {
     {"set_del", (PyCFunction) NetfilterBatchHandle_set_del, METH_VARARGS, NULL},
     {"elem_put", (PyCFunction) NetfilterBatchHandle_elem_put, METH_VARARGS, NULL},
     {"elem_del", (PyCFunction) NetfilterBatchHandle_elem_del, METH_VARARGS, NULL},
-    {"dump", (PyCFunction) NetfilterBatchHandle_dump, METH_NOARGS, NULL},
     {"end", (PyCFunction) NetfilterBatchHandle_end, METH_NOARGS, NULL},
+    {"dump", (PyCFunction) NetfilterBatchHandle_dump, METH_NOARGS, NULL},
     {NULL}
 };
 
@@ -781,7 +781,7 @@ static PyObject* libnftnlset_element (PyObject* self) {
     return (PyObject*) handle_object;
 }
 
-static PyObject* libnftnlset_set (PyObject* self, PyTupleObject* args) {
+static PyObject* libnftnlset_set (PyObject* self) {
     PyObject* empty;
     NetfilterSetHandle* handle_object;
     struct nftnl_set* handle_struct;
@@ -801,7 +801,7 @@ static PyObject* libnftnlset_set (PyObject* self, PyTupleObject* args) {
     return (PyObject*) handle_object;
 }
 
-static PyObject* libnftnlset_batch (PyObject* self, PyTupleObject* args) {
+static PyObject* libnftnlset_batch (PyObject* self) {
     PyObject* empty;
     NetfilterBatchHandle* handle_object;
 
@@ -812,10 +812,25 @@ static PyObject* libnftnlset_batch (PyObject* self, PyTupleObject* args) {
     return (PyObject*) handle_object;
 }
 
+static PyObject* libnftnlset_handle (PyObject* self, PyObject* args) {
+    char* buf; uint32_t len;
+    uint32_t seq; uint32_t pid;
+
+    if (!PyArg_ParseTuple((PyObject*) args, "s#II", &buf, &len, &seq, &pid)) {
+        PyErr_SetString(PyExc_ValueError, "Parameters must be (char* buf, uint32_t seq, uint32_t pid)");
+        return NULL;
+    }
+
+    return PyInt_FromLong((long) mnl_cb_run((const void*) buf,
+                                            (size_t) len, seq,
+                                            pid, NULL, NULL));
+}
+
 static PyMethodDef libnftnlset_methods[] = {
     {"element", (PyCFunction) libnftnlset_element, METH_NOARGS, NULL},
     {"set", (PyCFunction) libnftnlset_set, METH_NOARGS, NULL},
     {"batch", (PyCFunction) libnftnlset_batch, METH_NOARGS, NULL},
+    {"handle", (PyCFunction) libnftnlset_handle, METH_VARARGS, NULL},
     {NULL}
 };
 
@@ -845,14 +860,37 @@ PyMODINIT_FUNC initlibnftnlset (void) {
     Py_INCREF((PyObject*) &NetfilterBatchHandleType);
     PyModule_AddObject(module, "NetfilterBatchHandle", (PyObject*) &NetfilterBatchHandleType);
 
-    /* Protocol */
+    /* Message Types */
+
+    PyModule_AddIntConstant(module, "NLMSG_NOOP", NLMSG_NOOP);
+    PyModule_AddIntConstant(module, "NLMSG_ERROR", NLMSG_ERROR);
+    PyModule_AddIntConstant(module, "NLMSG_DONE", NLMSG_DONE);
+    PyModule_AddIntConstant(module, "NLMSG_OVERRUN", NLMSG_OVERRUN);
+
+    /* Message Flags */
+
+    PyModule_AddIntConstant(module, "NLM_F_REQUEST", NLM_F_REQUEST);
+    PyModule_AddIntConstant(module, "NLM_F_MULTI", NLM_F_MULTI);
+    PyModule_AddIntConstant(module, "NLM_F_ACK", NLM_F_ACK);
+    PyModule_AddIntConstant(module, "NLM_F_ECHO", NLM_F_ECHO);
+    PyModule_AddIntConstant(module, "NLM_F_DUMP_INTR", NLM_F_DUMP_INTR);
+    PyModule_AddIntConstant(module, "NLM_F_ROOT", NLM_F_ROOT);
+    PyModule_AddIntConstant(module, "NLM_F_MATCH", NLM_F_MATCH);
+    PyModule_AddIntConstant(module, "NLM_F_ATOMIC", NLM_F_ATOMIC);
+    PyModule_AddIntConstant(module, "NLM_F_DUMP", NLM_F_DUMP);
+    PyModule_AddIntConstant(module, "NLM_F_REPLACE", NLM_F_REPLACE);
+    PyModule_AddIntConstant(module, "NLM_F_EXCL", NLM_F_EXCL);
+    PyModule_AddIntConstant(module, "NLM_F_CREATE", NLM_F_CREATE);
+    PyModule_AddIntConstant(module, "NLM_F_APPEND", NLM_F_APPEND);
+
+    /* Protocol Families */
 
     PyModule_AddIntConstant(module, "NFPROTO_IPV4", NFPROTO_IPV4);
     PyModule_AddIntConstant(module, "NFPROTO_IPV6", NFPROTO_IPV6);
     PyModule_AddIntConstant(module, "NFPROTO_BRIDGE", NFPROTO_BRIDGE);
     PyModule_AddIntConstant(module, "NFPROTO_ARP", NFPROTO_ARP);
 
-    /* Socket */
+    /* Socket Constants */
 
     PyModule_AddIntConstant(module, "MNL_SOCKET_AUTOPID", MNL_SOCKET_AUTOPID);
     PyModule_AddIntConstant(module, "MNL_SOCKET_BUFFER_SIZE", MNL_SOCKET_BUFFER_SIZE);
