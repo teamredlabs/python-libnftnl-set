@@ -883,6 +883,10 @@ PyMODINIT_FUNC initlibnftnlset (void) {
     PyModule_AddIntConstant(module, "NLM_F_CREATE", NLM_F_CREATE);
     PyModule_AddIntConstant(module, "NLM_F_APPEND", NLM_F_APPEND);
 
+    /* Element Flags */
+
+    PyModule_AddIntConstant(module, "NFT_SET_ELEM_INTERVAL_END", NFT_SET_ELEM_INTERVAL_END);
+
     /* Protocol Families */
 
     PyModule_AddIntConstant(module, "NFPROTO_IPV4", NFPROTO_IPV4);
