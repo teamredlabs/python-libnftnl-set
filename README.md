@@ -10,6 +10,10 @@ To add an element to a set, refer to the following snippet (note the call to `el
 import socket
 import libnftnlset
 
+# Prepare bufsize
+
+bufsize = libnftnlset.MNL_SOCKET_BUFFER_SIZE
+
 # Prepare family
 
 nf_family = libnftnlset.NFPROTO_IPV4
@@ -42,7 +46,7 @@ nf_set.add(nf_elem)
 
 # Construct the request
 
-nf_batch = libnftnlset.batch()
+nf_batch = libnftnlset.batch(bufsize)
 nf_batch.begin()
 nf_batch.elem_put(nf_set, nf_family, True)
 nf_batch.end()
@@ -67,12 +71,12 @@ sent = sock.sendto(request, 0, (0, 0))
 
 # Perform receive loop
 
-response = sock.recv(libnftnlset.MNL_SOCKET_BUFFER_SIZE)
+response = sock.recv(bufsize)
 status = len(response)
 while 0 < status:
     status = libnftnlset.handle(response, 0, pid)
     if 0 < status:
-        response = sock.recv(libnftnlset.MNL_SOCKET_BUFFER_SIZE)
+        response = sock.recv(bufsize)
         status = len(response)
         continue
     break
@@ -87,6 +91,10 @@ To remove an element from a set, refer to the following snippet (note the call t
 ```python
 import socket
 import libnftnlset
+
+# Prepare bufsize
+
+bufsize = libnftnlset.MNL_SOCKET_BUFFER_SIZE
 
 # Prepare family
 
@@ -120,7 +128,7 @@ nf_set.add(nf_elem)
 
 # Construct the request
 
-nf_batch = libnftnlset.batch()
+nf_batch = libnftnlset.batch(bufsize)
 nf_batch.begin()
 nf_batch.elem_del(nf_set, nf_family, True)
 nf_batch.end()
@@ -145,12 +153,12 @@ sent = sock.sendto(request, 0, (0, 0))
 
 # Perform receive loop
 
-response = sock.recv(libnftnlset.MNL_SOCKET_BUFFER_SIZE)
+response = sock.recv(bufsize)
 status = len(response)
 while 0 < status:
     status = libnftnlset.handle(response, 0, pid)
     if 0 < status:
-        response = sock.recv(libnftnlset.MNL_SOCKET_BUFFER_SIZE)
+        response = sock.recv(bufsize)
         status = len(response)
         continue
     break

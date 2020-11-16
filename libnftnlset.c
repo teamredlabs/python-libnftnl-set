@@ -530,7 +530,14 @@ static void NetfilterBatchHandle_dealloc (NetfilterBatchHandle* self) {
     Py_TYPE(self)->tp_free((PyObject*) self);
 }
 
-static PyObject* NetfilterBatchHandle_begin (NetfilterBatchHandle* self) {
+static PyObject* NetfilterBatchHandle_begin (NetfilterBatchHandle* self, PyTupleObject* args) {
+    uint32_t bufsize;
+
+    if (!PyArg_ParseTuple((PyObject*) args, "I", &bufsize)) {
+        PyErr_SetString(PyExc_ValueError, "Parameters must be (uint32_t bufsize)");
+        return NULL;
+    }
+
     if (self->handle || self->buffer) {
         PyErr_SetString(PyExc_OSError, "NetfilterBatchHandle.begin has already been called");
         return NULL;
@@ -538,13 +545,13 @@ static PyObject* NetfilterBatchHandle_begin (NetfilterBatchHandle* self) {
 
     self->seq = time(NULL);
 
-    self->buffer = malloc(MNL_SOCKET_BUFFER_SIZE);
+    self->buffer = malloc(bufsize);
     if (!self->buffer) {
         PyErr_SetString(PyExc_OSError, "Call to malloc failed");
         return NULL;
     }
 
-    self->handle = mnl_nlmsg_batch_start(self->buffer, MNL_SOCKET_BUFFER_SIZE);
+    self->handle = mnl_nlmsg_batch_start(self->buffer, bufsize);
     if (!self->handle) {
         PyErr_SetString(PyExc_OSError, "Call to mnl_nlmsg_batch_start failed");
         return NULL;
@@ -708,7 +715,7 @@ static PyMemberDef NetfilterBatchHandle_members[] = {
 };
 
 static PyMethodDef NetfilterBatchHandle_methods[] = {
-    {"begin", (PyCFunction) NetfilterBatchHandle_begin, METH_NOARGS, NULL},
+    {"begin", (PyCFunction) NetfilterBatchHandle_begin, METH_VARARGS, NULL},
     {"set_put", (PyCFunction) NetfilterBatchHandle_set_put, METH_VARARGS, NULL},
     {"set_del", (PyCFunction) NetfilterBatchHandle_set_del, METH_VARARGS, NULL},
     {"elem_put", (PyCFunction) NetfilterBatchHandle_elem_put, METH_VARARGS, NULL},
