@@ -214,6 +214,7 @@ static int NetfilterElementHandle_SetAttr (NetfilterElementHandle* self, PyObjec
 static _nf_nftnl_attr_spec NetfilterElementHandleAttributes [] = {
     {"flags", NFTNL_SET_ELEM_FLAGS, NF_NFTNL_ATTR_TYPE_U32, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
     {"key", NFTNL_SET_ELEM_KEY, NF_NFTNL_ATTR_TYPE_RAW, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
+    {"key_end", NFTNL_SET_ELEM_KEY_END, NF_NFTNL_ATTR_TYPE_RAW, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
     {"verdict", NFTNL_SET_ELEM_VERDICT, NF_NFTNL_ATTR_TYPE_U32, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
     {"chain", NFTNL_SET_ELEM_CHAIN, NF_NFTNL_ATTR_TYPE_STR, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
     {"data", NFTNL_SET_ELEM_DATA, NF_NFTNL_ATTR_TYPE_RAW, NF_NFTNL_ATTR_IO_READ | NF_NFTNL_ATTR_IO_WRITE},
@@ -889,6 +890,16 @@ PyMODINIT_FUNC initlibnftnlset (void) {
     PyModule_AddIntConstant(module, "NLM_F_EXCL", NLM_F_EXCL);
     PyModule_AddIntConstant(module, "NLM_F_CREATE", NLM_F_CREATE);
     PyModule_AddIntConstant(module, "NLM_F_APPEND", NLM_F_APPEND);
+
+    /* Set Flags */
+
+    PyModule_AddIntConstant(module, "NFT_SET_ANONYMOUS", NFT_SET_ANONYMOUS);
+    PyModule_AddIntConstant(module, "NFT_SET_CONSTANT", NFT_SET_CONSTANT);
+    PyModule_AddIntConstant(module, "NFT_SET_INTERVAL", NFT_SET_INTERVAL);
+    PyModule_AddIntConstant(module, "NFT_SET_MAP", NFT_SET_MAP);
+    PyModule_AddIntConstant(module, "NFT_SET_TIMEOUT", NFT_SET_TIMEOUT);
+    PyModule_AddIntConstant(module, "NFT_SET_EVAL", NFT_SET_EVAL);
+    PyModule_AddIntConstant(module, "NFT_SET_OBJECT", NFT_SET_OBJECT);
 
     /* Element Flags */
 
